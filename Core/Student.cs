@@ -2,11 +2,11 @@
 {
     public class Student : Person, IStudyable, IChessPlayer
     {
-        public int Course { get; set; } 
-        public string StudentId { get; set; } 
+        public int Course { get; set; }
+        public string StudentId { get; set; }
         public double AverageGrade { get; set; }
-        public string Country { get; set; } 
-        public string RecordBookNumber { get; set; } 
+        public string Country { get; set; }
+        public string RecordBookNumber { get; set; }
 
         public Student(string firstName, string lastName, int course, string studentId, double averageGrade, string country, string recordBookNumber)
             : base(firstName, lastName)
@@ -21,11 +21,13 @@
         public void Study()
         {
             AverageGrade = Math.Min(AverageGrade + 0.1, 5.0);
+            Console.WriteLine($"Середній бал оновлено до {AverageGrade} після Study.");
         }
 
         public void PlayChess()
         {
             AverageGrade = Math.Min(AverageGrade + 0.05, 5.0);
+            Console.WriteLine($"Середній бал оновлено до {AverageGrade} після PlayChess.");
         }
     }
 }

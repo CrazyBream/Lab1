@@ -91,6 +91,8 @@ namespace IO
 
         private void ReadAndDisplay()
         {
+            Console.Clear();
+            Console.WriteLine("Список сутностей:");
             using (FileStream fs = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
             using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
             {
@@ -100,6 +102,9 @@ namespace IO
                     DisplayEntity(entity);
                 }
             }
+            Console.WriteLine("\nНатисніть будь-яку клавішу, щоб повернутися...");
+            Console.ReadKey();
+            Console.Clear();
         }
 
         private void DisplayEntity(Person entity)
@@ -167,27 +172,80 @@ namespace IO
 
         private void DemonstrateActions()
         {
-            using (FileStream fs = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
-            using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
+            try
             {
-                Person entity = _fileHandler.ReadNextEntity(reader);
-                if (entity != null)
+                Person studyEntity = null;
+                Person playChessEntity = null;
+
+                // Читання для першої дії
+                using (FileStream fs = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
                 {
-                    if (entity is IStudyable studyable)
+                    Person entity;
+                    while ((entity = _fileHandler.ReadNextEntity(reader)) != null)
                     {
-                        studyable.Study();
-                        Console.WriteLine($"Дія Study виконана для {entity.FirstName} {entity.LastName}.");
+                        if (entity is Student && studyEntity == null)
+                        {
+                            studyEntity = entity;
+                            break;
+                        }
                     }
-                    if (entity is IChessPlayer player)
+                }
+
+                // Читання для другої дії
+                using (FileStream fs2 = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader reader2 = new StreamReader(fs2, System.Text.Encoding.UTF8))
+                {
+                    bool firstSkipped = false;
+                    Person entity;
+                    while ((entity = _fileHandler.ReadNextEntity(reader2)) != null)
                     {
-                        player.PlayChess();
-                        Console.WriteLine($"Дія PlayChess виконана для {entity.FirstName} {entity.LastName}.");
+                        if (entity is Student)
+                        {
+                            if (!firstSkipped)
+                            {
+                                firstSkipped = true;
+                                continue;
+                            }
+                            playChessEntity = entity;
+                            break;
+                        }
                     }
+                }
+
+                // Виконання дій
+                if (studyEntity != null && studyEntity is IStudyable studyable)
+                {
+                    studyable.Study();
+                    if (studyEntity is Student student)
+                    {
+                        _fileHandler.UpdateEntity(student);
+                    }
+                    Console.WriteLine($"Дія Study виконана для {studyEntity.FirstName} {studyEntity.LastName}.");
                 }
                 else
                 {
-                    Console.WriteLine("Немає сутностей для демонстрації.");
+                    Console.WriteLine("Немає студентів для дії Study.");
                 }
+
+                if (playChessEntity != null && playChessEntity is IChessPlayer player)
+                {
+                    player.PlayChess();
+                    if (playChessEntity is Student student)
+                    {
+                        _fileHandler.UpdateEntity(student);
+                    }
+                    Console.WriteLine($"Дія PlayChess виконана для {playChessEntity.FirstName} {playChessEntity.LastName}.");
+                }
+                else
+                {
+                    Console.WriteLine("Немає другого студента для дії PlayChess.");
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Помилка в DemonstrateActions: {ex.Message}");
+                throw;
             }
         }
     }

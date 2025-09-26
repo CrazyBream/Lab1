@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Globalization; 
+using System.Globalization;
 using Core;
 
 namespace IO
@@ -22,37 +22,45 @@ namespace IO
         {
             if (_disposed) throw new ObjectDisposedException(nameof(FileHandler));
 
-            using (FileStream fs = new FileStream(_filePath, FileMode.Append, FileAccess.Write))
-            using (StreamWriter writer = new StreamWriter(fs, System.Text.Encoding.UTF8))
+            RetryOnFileAccess(() =>
             {
-                string type = entity.GetType().Name;
-                string name = $"{entity.FirstName}{entity.LastName}";
-                writer.WriteLine($"{type} {name}");
-                writer.WriteLine("{");
-
-                writer.WriteLine($"\"firstname\": \"{entity.FirstName}\",");
-                writer.WriteLine($"\"lastname\": \"{entity.LastName}\",");
-
-                if (entity is Student student)
+                using (FileStream fs = new FileStream(_filePath, FileMode.Append, FileAccess.Write))
+                using (StreamWriter writer = new StreamWriter(fs, System.Text.Encoding.UTF8))
                 {
-                    writer.WriteLine($"\"course\": \"{student.Course}\",");
-                    writer.WriteLine($"\"studentId\": \"{student.StudentId}\",");
-                    writer.WriteLine($"\"averageGrade\": \"{student.AverageGrade.ToString(CultureInfo.InvariantCulture)}\","); 
-                    writer.WriteLine($"\"country\": \"{student.Country}\",");
-                    writer.WriteLine($"\"recordBookNumber\": \"{student.RecordBookNumber}\"");
+                    WriteEntityToWriter(entity, writer);
                 }
-                else if (entity is McdonaldsWorker worker)
-                {
-                    writer.WriteLine($"\"position\": \"{worker.Position}\"");
-                }
-                else if (entity is Manager manager)
-                {
-                    writer.WriteLine($"\"department\": \"{manager.Department}\"");
-                }
+            });
+        }
 
-                writer.WriteLine("};");
-                writer.Flush();
+        private void WriteEntityToWriter(Person entity, StreamWriter writer)
+        {
+            string type = entity.GetType().Name;
+            string name = $"{entity.FirstName}{entity.LastName}";
+            writer.WriteLine($"{type} {name}");
+            writer.WriteLine("{");
+
+            writer.WriteLine($"\"firstname\": \"{entity.FirstName}\",");
+            writer.WriteLine($"\"lastname\": \"{entity.LastName}\",");
+
+            if (entity is Student student)
+            {
+                writer.WriteLine($"\"course\": \"{student.Course}\",");
+                writer.WriteLine($"\"studentId\": \"{student.StudentId}\",");
+                writer.WriteLine($"\"averageGrade\": \"{student.AverageGrade.ToString(CultureInfo.InvariantCulture)}\",");
+                writer.WriteLine($"\"country\": \"{student.Country}\",");
+                writer.WriteLine($"\"recordBookNumber\": \"{student.RecordBookNumber}\"");
             }
+            else if (entity is McdonaldsWorker worker)
+            {
+                writer.WriteLine($"\"position\": \"{worker.Position}\"");
+            }
+            else if (entity is Manager manager)
+            {
+                writer.WriteLine($"\"department\": \"{manager.Department}\"");
+            }
+
+            writer.WriteLine("};");
+            writer.Flush();
         }
 
         public Person ReadNextEntity(StreamReader reader)
@@ -66,12 +74,12 @@ namespace IO
             if (line == null) return null;
 
             string[] parts = line.Split(' ');
-            if (parts.Length < 2) return null; 
+            if (parts.Length < 2) return null;
             string type = parts[0];
             string name = parts[1];
 
             string openBrace = reader.ReadLine();
-            if (openBrace != "{") return null; 
+            if (openBrace != "{") return null;
 
             string firstName = ParseAttribute(reader.ReadLine());
             string lastName = ParseAttribute(reader.ReadLine());
@@ -86,7 +94,6 @@ namespace IO
                 }
                 string studentId = ParseAttribute(reader.ReadLine());
                 string avgGradeStr = ParseAttribute(reader.ReadLine());
-                
                 if (!double.TryParse(avgGradeStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double avgGrade))
                 {
                     throw new FormatException($"Невірний формат середнього балу: {avgGradeStr}");
@@ -108,9 +115,9 @@ namespace IO
             }
 
             string close = reader.ReadLine();
-            if (close != "};") 
+            if (close != "};")
             {
-                
+
             }
 
             return entity;
@@ -128,9 +135,6 @@ namespace IO
                 return string.Empty;
 
             string value = line.Substring(start, end - start).Trim();
-           
-            if (string.IsNullOrEmpty(value))
-                Console.WriteLine($"Порожнє значення для рядка: {line}");
             return value;
         }
 
@@ -138,41 +142,104 @@ namespace IO
         {
             if (_disposed) throw new ObjectDisposedException(nameof(FileHandler));
 
-            using (FileStream fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
-            using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
+            RetryOnFileAccess(() =>
             {
-                Person entity;
-                while ((entity = ReadNextEntity(reader)) != null)
+                using (FileStream fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
                 {
-                    if (entity is Student student)
+                    Person entity;
+                    while ((entity = ReadNextEntity(reader)) != null)
                     {
-                        processAction(student);
+                        if (entity is Student student)
+                        {
+                            processAction(student);
+                        }
                     }
                 }
-            }
+            });
         }
 
         public void DeleteByLastName(string lastName)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(FileHandler));
 
-            string tempFile = Path.GetTempFileName();
-            using (FileStream fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
-            using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
-            using (FileStream tempFs = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
-            using (StreamWriter writer = new StreamWriter(tempFs, System.Text.Encoding.UTF8))
+            RetryOnFileAccess(() =>
             {
-                Person entity;
-                while ((entity = ReadNextEntity(reader)) != null)
+                string tempFile = Path.GetTempFileName();
+                using (FileStream fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
+                using (FileStream tempFs = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
+                using (StreamWriter writer = new StreamWriter(tempFs, System.Text.Encoding.UTF8))
                 {
-                    if (entity.LastName != lastName)
+                    Person entity;
+                    while ((entity = ReadNextEntity(reader)) != null)
                     {
-                        WriteEntity(entity);
+                        if (entity.LastName != lastName)
+                        {
+                            WriteEntityToWriter(entity, writer);
+                        }
                     }
                 }
+                File.Delete(_filePath);
+                File.Move(tempFile, _filePath);
+            });
+        }
+
+        public void UpdateEntity(Student updatedStudent)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(FileHandler));
+
+            RetryOnFileAccess(() =>
+            {
+                string tempFile = Path.GetTempFileName();
+                using (FileStream fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
+                using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
+                using (FileStream tempFs = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
+                using (StreamWriter writer = new StreamWriter(tempFs, System.Text.Encoding.UTF8))
+                {
+                    Person entity;
+                    bool found = false;
+                    while ((entity = ReadNextEntity(reader)) != null)
+                    {
+                        if (entity is Student student && student.FirstName == updatedStudent.FirstName && student.LastName == updatedStudent.LastName)
+                        {
+                            WriteEntityToWriter(updatedStudent, writer);
+                            found = true;
+                        }
+                        else
+                        {
+                            WriteEntityToWriter(entity, writer);
+                        }
+                    }
+                    if (!found)
+                    {
+                        WriteEntityToWriter(updatedStudent, writer);
+                    }
+                }
+                File.Delete(_filePath);
+                File.Move(tempFile, _filePath);
+            });
+        }
+
+        private void RetryOnFileAccess(Action action, int retries = 5, int delayMs = 200)
+        {
+            for (int i = 0; i < retries; i++)
+            {
+                try
+                {
+                    action();
+                    return;
+                }
+                catch (IOException ex)
+                {
+                    if (i == retries - 1)
+                    {
+                        throw;
+                    }
+                    Console.WriteLine($"Спроба {i + 1}: Файл заблокований, чекаємо {delayMs} мс...");
+                    System.Threading.Thread.Sleep(delayMs);
+                }
             }
-            File.Delete(_filePath);
-            File.Move(tempFile, _filePath);
         }
 
         public void Dispose()

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Core
 {
-    public class Manager : Person, IStudyable, IChessPlayer
+    public class Manager : Person
     {
         public string Department { get; set; } 
 
@@ -14,16 +14,6 @@ namespace Core
             : base(firstName, lastName)
         {
             Department = department;
-        }
-
-        public void Study()
-        {
-           
-        }
-
-        public void PlayChess()
-        {
-   
         }
     }
 }

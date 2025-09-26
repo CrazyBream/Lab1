@@ -221,6 +221,7 @@ namespace IO
             });
         }
 
+        // По суті вже не треба, просто буде як доп фіча
         private void RetryOnFileAccess(Action action, int retries = 5, int delayMs = 200)
         {
             for (int i = 0; i < retries; i++)

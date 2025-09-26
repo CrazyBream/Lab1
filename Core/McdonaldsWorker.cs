@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Core
 {
-        public class McdonaldsWorker : Person, IStudyable
+        public class McdonaldsWorker : Person
         {
             public string Position { get; set; }
 
@@ -16,9 +16,9 @@ namespace Core
                 Position = position;
             }
 
-            public void Study()
-            {
-     
-            }
-        }
+        //public void Study() можна буде зробити щоб підвищувати кваліфікацію
+        // {
+
+        //}
+    }
 }

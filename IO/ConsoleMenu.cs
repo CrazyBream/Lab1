@@ -177,7 +177,6 @@ namespace IO
                 Person studyEntity = null;
                 Person playChessEntity = null;
 
-                // Читання для першої дії
                 using (FileStream fs = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
                 using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8))
                 {
@@ -192,7 +191,6 @@ namespace IO
                     }
                 }
 
-                // Читання для другої дії
                 using (FileStream fs2 = new FileStream(_fileHandler.FilePath, FileMode.Open, FileAccess.Read))
                 using (StreamReader reader2 = new StreamReader(fs2, System.Text.Encoding.UTF8))
                 {
@@ -213,7 +211,6 @@ namespace IO
                     }
                 }
 
-                // Виконання дій
                 if (studyEntity != null && studyEntity is IStudyable studyable)
                 {
                     studyable.Study();
